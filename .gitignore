@@ -1,0 +1,9 @@
+Task2.Api/bin
+Task2.Api/obj
+Task2.Infrastructure/bin
+Task2.Infrastructure/obj
+Task2.Services/bin
+Task2.Services/obj
+*.dll
+.vs
+
