@@ -8,7 +8,8 @@ namespace Task2.Services
     {
         public LocalService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext) : base(logger, serverContext)
         {
-            IsEnable = true;
+            IsEnable = false;
+            Interval = 60;
         }
 
 

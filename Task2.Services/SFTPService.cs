@@ -1,6 +1,6 @@
-﻿using FluentFTP;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Renci.SshNet;
 using Task2.Context;
 
 namespace Task2.Services
@@ -10,6 +10,7 @@ namespace Task2.Services
         public SFTPService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext) : base(logger, serverContext)
         {
             IsEnable = true;
+            Interval = 60;
         }
 
 
@@ -20,41 +21,35 @@ namespace Task2.Services
         {
             foreach (var server in Servers)
             {
-                var files = GetAllFiles(server, "/");
+                SftpClient sftp = new SftpClient(server.Url, server.UserName, server.Password);
+                sftp.Connect();
+                var files = GetAllFiles(sftp, "/");
+                sftp.Disconnect();
                 await SavePathAsync(files);
             }
 
             return;
         }
-        private List<string> GetAllFiles(Server server, string url)
+        private List<string> GetAllFiles(SftpClient sftp, string url)
         {
             var result = new List<string>();
-            FtpClient client = new FtpClient(server.Url, server.Port, server.UserName, server.Password);
-            client.ValidateCertificate += ClientValidateCertificate;
-            client.SslProtocols = System.Security.Authentication.SslProtocols.Tls12;
-            client.AutoConnect();
-            foreach (FtpListItem item in client.GetListing(url))
-            {
 
-                if (item.Type == FtpObjectType.File)
-                {
-                    result.Add(item.FullName);
-                }
-                else if (item.Type == FtpObjectType.Directory)
-                {
-                    result.AddRange(GetAllFiles(server, item.FullName));
-                }
+            var files = sftp.ListDirectory(url);
+
+            foreach (var file in files.Where(q => !q.IsDirectory))
+            {
+                result.Add(file.FullName);
             }
 
 
+            foreach (var file in files.Where(q => q.IsDirectory && !q.FullName.Contains("/.") && !q.FullName.Contains("/..")))
+            {
+                result.AddRange(GetAllFiles(sftp, file.FullName));
+            }
+
             return result;
         }
-        private void ClientValidateCertificate(FtpClient control, FtpSslValidationEventArgs e)
-        {
 
-            e.Accept = true;
-
-        }
 
         public override ServerType GetServerType()
         {

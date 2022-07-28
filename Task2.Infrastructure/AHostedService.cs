@@ -8,14 +8,15 @@ namespace Task2
 {
     public abstract class AHostedService : IHostedService, IDisposable
     {
-        private int executionCount = 0;
-        private readonly ILogger<AHostedService> _logger;
-        public IDbContextFactory<ServerContext> ServerContextFactory { get; private set; }
+        private int _executionCount = 0;
         private Timer? _timer = null;
-        public abstract Task ExcuteAsync();
-        public abstract ServerType GetServerType();
-        public bool IsEnable { get; set; }
+        private readonly ILogger<AHostedService> _logger;
         private List<Server> _servers;
+
+        public IDbContextFactory<ServerContext> ServerContextFactory { get; private set; }
+        public bool IsEnable { get; set; }
+        public int Interval { get; set; } = 10;
+
         public List<Server> Servers
         {
             get
@@ -23,69 +24,79 @@ namespace Task2
                 return _servers = _servers ?? GetServerInfomationAsync().Result;
             }
         }
+
+        public abstract Task ExcuteAsync();
+        public abstract ServerType GetServerType();
+
         public AHostedService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext)
         {
             _logger = logger;
             this.ServerContextFactory = serverContext;
+            _servers = new List<Server>();
             _logger.LogInformation("Service Initialized");
 
         }
 
         public async Task<List<Server>> GetServerInfomationAsync()
         {
-            _logger.LogInformation("Getting Server Information From Database.");
-            var context = ServerContextFactory.CreateDbContext();
-            List<Server> server = await context.Servers.Where(q => q.ServerType == GetServerType()).ToListAsync();
-            if (server == null)
+            List<Server> server = new List<Server>();
+            try
             {
-                _logger.LogWarning($"No Serve of type{GetServerType()} found");
+                _logger.LogInformation("Getting Server Information From Database.");
+                var context = ServerContextFactory.CreateDbContext();
+                server = await context.Servers.Where(q => q.ServerType == GetServerType()).ToListAsync();
+                if (server == null)
+                {
+                    server = new List<Server>();
+                    _logger.LogWarning($"No Serve of type{GetServerType()} found");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while read data.");
             }
             return server;
         }
+
         public Task StartAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Timed Hosted Service running.");
             if (IsEnable)
                 _timer = new Timer(DoWork, null, TimeSpan.Zero,
-                    TimeSpan.FromSeconds(5));
+                    TimeSpan.FromSeconds(Interval));
 
             return Task.CompletedTask;
         }
+
         public async Task SavePathAsync(List<string> paths)
         {
-            _logger.LogInformation("Saveing new file paths to Database.");
-            var context = ServerContextFactory.CreateDbContext();
-            var files = context.Files.Where(q => q.ServerType == GetServerType() && paths.Any(r => r == q.Path));
-            paths.RemoveAll(q => files.Any(r => r.Path == q));
-            paths.ForEach(q =>
-            {
-                context.Add(new File()
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Name = Path.GetFileName(q),
-                    Path = q,
-                    ServerType = GetServerType()
-                });
-            });
-            await context.SaveChangesAsync();
-        }
-        private async void DoWork(object? state)
-        {
-            var count = Interlocked.Increment(ref executionCount);
-            _timer.Change(Timeout.Infinite, Timeout.Infinite);
-            _logger.LogInformation("Excuting FileCheck");
             try
             {
-                await ExcuteAsync();
+                var context = ServerContextFactory.CreateDbContext();
+                var files = context.Files.Where(q => q.ServerType == GetServerType() && paths.Any(r => r == q.Path));
+                paths.RemoveAll(q => files.Any(r => r.Path == q));
+                paths.ForEach(q =>
+                {
+                    context.Add(new File()
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Name = Path.GetFileName(q),
+                        Path = q,
+                        ServerType = GetServerType()
+                    });
+                });
+                if (paths.Count > 0)
+                {
+                    await context.SaveChangesAsync();
+                }
+                _logger.LogInformation("{Count} new file paths found from {Type}.", paths.Count, this.ToString());
+
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occured in excuting service{Type}", this.ToString());
+                _logger.LogError(ex, "Error while saving.");
             }
 
-            _timer = new Timer(DoWork, null, TimeSpan.FromSeconds(5),
-           TimeSpan.FromSeconds(5));
-            _logger.LogInformation("{Type} Hosted Service is working. Count: {Count}", this.ToString(), count);
         }
 
         public Task StopAsync(CancellationToken stoppingToken)
@@ -100,6 +111,24 @@ namespace Task2
         public void Dispose()
         {
             _timer?.Dispose();
+        }
+
+        private async void DoWork(object? state)
+        {
+            var count = Interlocked.Increment(ref _executionCount);
+            _timer.Change(Timeout.Infinite, Timeout.Infinite);
+            _logger.LogInformation("Excuting File Check", this.ToString());
+            try
+            {
+                await ExcuteAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occured in excuting service{Type}", this.ToString());
+            }
+            _timer = new Timer(DoWork, null, TimeSpan.FromSeconds(Interval),
+            TimeSpan.FromSeconds(Interval));
+            _logger.LogInformation("{Type} Hosted Service called: {Count}", this.ToString(), count);
         }
     }
 }

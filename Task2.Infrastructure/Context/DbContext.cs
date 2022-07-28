@@ -44,6 +44,7 @@ namespace Task2.Context
 
         public void Seed()
         {
+            throw new NotImplementedException("Please update FTP Information in the Seed and Run Migration");
             modelBuilder.Entity<Server>().HasData(
                 new Server() { Id = "62CD1744-DD07-4BB4-8EE0-FC1359E2C278", Name = "LocalFile1Server", ServerType = ServerType.Local, Url = "D:\\testFTP", UserName = "", Password = "" },
                 new Server() { Id = "62CD1744-DD07-4BB4-8EE0-FC1359E2C279", Name = "LocalFile2Server", ServerType = ServerType.Local, Url = "D:\\output", UserName = "", Password = "" },

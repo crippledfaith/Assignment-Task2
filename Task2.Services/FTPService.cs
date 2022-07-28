@@ -9,7 +9,8 @@ namespace Task2.Services
     {
         public FTPService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext) : base(logger, serverContext)
         {
-            IsEnable = true;
+            IsEnable = false;
+            Interval = 60;
         }
 
 
@@ -20,19 +21,22 @@ namespace Task2.Services
         {
             foreach (var server in Servers)
             {
-                var files = GetAllFiles(server, "/");
+                FtpClient client = new FtpClient(server.Url, server.Port, server.UserName, server.Password);
+                client.ValidateCertificate += ClientValidateCertificate;
+                client.SslProtocols = System.Security.Authentication.SslProtocols.None;
+                client.AutoConnect();
+                var files = GetAllFiles(client, "/");
+                client.Disconnect();
+                client.Dispose();
                 await SavePathAsync(files);
             }
 
             return;
         }
-        private List<string> GetAllFiles(Server server, string url)
+        private List<string> GetAllFiles(FtpClient client, string url)
         {
             var result = new List<string>();
-            FtpClient client = new FtpClient(server.Url, server.Port, server.UserName, server.Password);
-            client.ValidateCertificate += ClientValidateCertificate;
-            client.SslProtocols = System.Security.Authentication.SslProtocols.None;
-            client.AutoConnect();
+
             foreach (FtpListItem item in client.GetListing(url))
             {
 
@@ -42,7 +46,7 @@ namespace Task2.Services
                 }
                 else if (item.Type == FtpObjectType.Directory)
                 {
-                    result.AddRange(GetAllFiles(server, item.FullName));
+                    result.AddRange(GetAllFiles(client, item.FullName));
                 }
             }
 
