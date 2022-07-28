@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Task2.Context;
-using File = Task2.Context.File;
+using Task2.Infrastructure.Context;
+using File = Task2.Infrastructure.Context.File;
 
-namespace Task2
+namespace Task2.Infrastructure
 {
     public abstract class AHostedService : IHostedService, IDisposable
     {
@@ -31,7 +31,8 @@ namespace Task2
         public AHostedService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext)
         {
             _logger = logger;
-            this.ServerContextFactory = serverContext;
+            ServerContextFactory = serverContext;
+
             _servers = new List<Server>();
             _logger.LogInformation("Service Initialized");
 
@@ -44,11 +45,18 @@ namespace Task2
             {
                 _logger.LogInformation("Getting Server Information From Database.");
                 var context = ServerContextFactory.CreateDbContext();
-                server = await context.Servers.Where(q => q.ServerType == GetServerType()).ToListAsync();
-                if (server == null)
+                if (context != null && context.Servers != null)
+                {
+                    server = await context.Servers.Where(q => q.ServerType == GetServerType()).ToListAsync();
+                    if (server == null)
+                    {
+                        server = new List<Server>();
+                        _logger.LogWarning($"No Serve of type{GetServerType()} found");
+                    }
+                }
+                else
                 {
                     server = new List<Server>();
-                    _logger.LogWarning($"No Serve of type{GetServerType()} found");
                 }
             }
             catch (Exception ex)
@@ -62,8 +70,7 @@ namespace Task2
         {
             _logger.LogInformation("Timed Hosted Service running.");
             if (IsEnable)
-                _timer = new Timer(DoWork, null, TimeSpan.Zero,
-                    TimeSpan.FromSeconds(Interval));
+                _timer = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromSeconds(Interval));
 
             return Task.CompletedTask;
         }
@@ -73,23 +80,26 @@ namespace Task2
             try
             {
                 var context = ServerContextFactory.CreateDbContext();
-                var files = context.Files.Where(q => q.ServerType == GetServerType() && paths.Any(r => r == q.Path));
-                paths.RemoveAll(q => files.Any(r => r.Path == q));
-                paths.ForEach(q =>
+                var files = context?.Files?.Where(q => q.ServerType == GetServerType() && paths.Any(r => r == q.Path));
+                if (files != null && context != null)
                 {
-                    context.Add(new File()
+                    paths.RemoveAll(q => files.Any(r => r.Path == q));
+                    paths.ForEach(q =>
                     {
-                        Id = Guid.NewGuid().ToString(),
-                        Name = Path.GetFileName(q),
-                        Path = q,
-                        ServerType = GetServerType()
+                        context.Add(new File()
+                        {
+                            Id = Guid.NewGuid().ToString(),
+                            Name = Path.GetFileName(q),
+                            Path = q,
+                            ServerType = GetServerType()
+                        });
                     });
-                });
-                if (paths.Count > 0)
-                {
-                    await context.SaveChangesAsync();
+                    if (paths.Count > 0)
+                    {
+                        await context.SaveChangesAsync();
+                    }
                 }
-                _logger.LogInformation("{Count} new file paths found from {Type}.", paths.Count, this.ToString());
+                _logger.LogInformation("{Count} new file paths found from {Type}.", paths.Count, ToString());
 
             }
             catch (Exception ex)
@@ -116,19 +126,18 @@ namespace Task2
         private async void DoWork(object? state)
         {
             var count = Interlocked.Increment(ref _executionCount);
-            _timer.Change(Timeout.Infinite, Timeout.Infinite);
-            _logger.LogInformation("Excuting File Check", this.ToString());
+            _timer?.Change(Timeout.Infinite, Timeout.Infinite);
+            _logger.LogInformation("Excuting File Check", ToString());
             try
             {
                 await ExcuteAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occured in excuting service{Type}", this.ToString());
+                _logger.LogError(ex, "Error occured in excuting service{Type}", ToString());
             }
-            _timer = new Timer(DoWork, null, TimeSpan.FromSeconds(Interval),
-            TimeSpan.FromSeconds(Interval));
-            _logger.LogInformation("{Type} Hosted Service called: {Count}", this.ToString(), count);
+            _timer?.Change(TimeSpan.FromSeconds(Interval), TimeSpan.FromSeconds(Interval));
+            _logger.LogInformation("{Type} Hosted Service called: {Count}", ToString(), count);
         }
     }
 }

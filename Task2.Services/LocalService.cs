@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Task2.Context;
+using Task2.Infrastructure;
+using Task2.Infrastructure.Context;
 
 namespace Task2.Services
 {

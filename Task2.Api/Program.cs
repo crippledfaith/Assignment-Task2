@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Task2;
-using Task2.Context;
+using Task2.Infrastructure;
+using Task2.Infrastructure.Context;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Task2.Context
+namespace Task2.Infrastructure.Context
 {
     public class Server : IEntity
     {

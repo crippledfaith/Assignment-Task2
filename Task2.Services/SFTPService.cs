@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Renci.SshNet;
-using Task2.Context;
+using Task2.Infrastructure;
+using Task2.Infrastructure.Context;
 
 namespace Task2.Services
 {
@@ -12,10 +13,6 @@ namespace Task2.Services
             IsEnable = true;
             Interval = 60;
         }
-
-
-
-        public ILogger<AHostedService> Logger { get; }
 
         public override async Task ExcuteAsync()
         {

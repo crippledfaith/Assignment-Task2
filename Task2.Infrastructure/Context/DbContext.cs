@@ -1,27 +1,22 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace Task2.Context
+namespace Task2.Infrastructure.Context
 {
     public partial class ServerContext : DbContext
     {
-        public DbSet<File> Files { get; set; }
-        public DbSet<Server> Servers { get; set; }
+        public DbSet<File>? Files { get; set; }
+        public DbSet<Server>? Servers { get; set; }
 
-        public ServerContext()
-        {
-        }
 
         public ServerContext(DbContextOptions<ServerContext> options)
             : base(options)
         {
+
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
-                optionsBuilder.UseNpgsql("Server=127.0.0.1;Port=5432;Database=Task2;User Id=postgres;Password=Test@123;");
-            }
+
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -44,7 +39,6 @@ namespace Task2.Context
 
         public void Seed()
         {
-            throw new NotImplementedException("Please update FTP Information in the Seed and Run Migration");
             modelBuilder.Entity<Server>().HasData(
                 new Server() { Id = "62CD1744-DD07-4BB4-8EE0-FC1359E2C278", Name = "LocalFile1Server", ServerType = ServerType.Local, Url = "D:\\testFTP", UserName = "", Password = "" },
                 new Server() { Id = "62CD1744-DD07-4BB4-8EE0-FC1359E2C279", Name = "LocalFile2Server", ServerType = ServerType.Local, Url = "D:\\output", UserName = "", Password = "" },
