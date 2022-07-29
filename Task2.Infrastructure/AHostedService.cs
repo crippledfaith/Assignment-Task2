@@ -180,7 +180,13 @@ namespace Task2.Infrastructure
             _timer?.Change(TimeSpan.FromSeconds(Interval), TimeSpan.FromSeconds(Interval));
             _logger.LogInformation("{Type} Hosted Service called: {Count}", ToString(), count);
         }
-
+        /// <summary>
+        /// Get the local path as it is in the server
+        /// </summary>
+        /// <param name="paths"></param>
+        /// <param name="curentFilePath"></param>
+        /// <param name="serverName"></param>
+        /// <returns></returns>
         private string GetLocalPath(List<string> paths, string curentFilePath, string serverName)
         {
             var commonPath = GetCommonPath(paths);
