@@ -7,10 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="FTPService.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="FluentFTP" Version="38.0.0" />
     <PackageReference Include="SSH.NET" Version="2020.0.2" />
   </ItemGroup>

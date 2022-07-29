@@ -23,7 +23,11 @@ namespace Task2.Services
             }
             return;
         }
-
+        /// <summary>
+        /// Recursivelty get all files from Local Folder
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="path"></param>
         private Dictionary<string, DateTime> GetAllFiles(string url)
         {
             var result = new Dictionary<string, DateTime>();

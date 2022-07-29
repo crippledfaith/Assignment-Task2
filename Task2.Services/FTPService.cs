@@ -30,6 +30,11 @@ namespace Task2.Services
 
             return;
         }
+        /// <summary>
+        /// Recursivelty get all files from FTP server
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="path"></param>
         private Dictionary<string, DateTime> GetAllFiles(FtpClient client, string url)
         {
             var result = new Dictionary<string, DateTime>();
@@ -39,11 +44,14 @@ namespace Task2.Services
 
                 if (item.Type == FtpObjectType.File)
                 {
-                    result.Add(item.FullName);
+                    result.Add(item.FullName, item.Modified.ToUniversalTime());
                 }
                 else if (item.Type == FtpObjectType.Directory)
                 {
-                    result.AddRange(GetAllFiles(client, item.FullName));
+                    foreach (var value in GetAllFiles(client, item.FullName))
+                    {
+                        result.Add(value.Key, value.Value);
+                    }
                 }
             }
 
@@ -60,9 +68,17 @@ namespace Task2.Services
             return ServerType.FTP;
         }
 
-        public override Task DownloadAsync(string path, string toLocalPath)
+        public override async Task DownloadAsync(Server server, string path, string toLocalPath)
         {
-            throw new NotImplementedException();
+            using (FtpClient client = new FtpClient(server.Url, server.Port, server.UserName, server.Password))
+            {
+                client.ValidateCertificate += ClientValidateCertificate;
+                client.SslProtocols = System.Security.Authentication.SslProtocols.None;
+                client.AutoConnect();
+                await client.DownloadFileAsync(toLocalPath, path);
+                client.Disconnect();
+            }
+            return;
         }
     }
 }
