@@ -25,7 +25,9 @@ builder.Services.AddSingleton<LocalService>();
 
 foreach (var type in services)
     builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), type));
+
 var app = builder.Build();
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 app.Run();
 

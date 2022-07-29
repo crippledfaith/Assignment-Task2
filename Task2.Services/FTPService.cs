@@ -11,7 +11,7 @@ namespace Task2.Services
     {
         public FTPService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext, IOptions<ServiceSetting> settings) : base(logger, serverContext, settings)
         {
-            IsEnable = true;
+            IsEnable = false;
         }
 
         public override async Task ExcuteAsync()
@@ -25,14 +25,14 @@ namespace Task2.Services
                 var files = GetAllFiles(client, "/");
                 client.Disconnect();
                 client.Dispose();
-                await SavePathAsync(files);
+                await SyncPathAsync(files, server);
             }
 
             return;
         }
-        private List<string> GetAllFiles(FtpClient client, string url)
+        private Dictionary<string, DateTime> GetAllFiles(FtpClient client, string url)
         {
-            var result = new List<string>();
+            var result = new Dictionary<string, DateTime>();
 
             foreach (FtpListItem item in client.GetListing(url))
             {
@@ -60,5 +60,9 @@ namespace Task2.Services
             return ServerType.FTP;
         }
 
+        public override Task DownloadAsync(string path, string toLocalPath)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

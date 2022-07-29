@@ -10,7 +10,7 @@ namespace Task2.Services
     {
         public LocalService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext, IOptions<ServiceSetting> settings) : base(logger, serverContext, settings)
         {
-            IsEnable = true;
+            IsEnable = false;
         }
 
 
@@ -19,18 +19,21 @@ namespace Task2.Services
             foreach (var server in Servers)
             {
                 var files = GetAllFiles(server.Url);
-                await SavePathAsync(files);
+                await SyncPathAsync(files, server);
             }
             return;
         }
 
-        private List<string> GetAllFiles(string url)
+        private Dictionary<string, DateTime> GetAllFiles(string url)
         {
-            var result = new List<string>();
-            result = Directory.GetFiles(url).ToList();
+            var result = new Dictionary<string, DateTime>();
+            Directory.GetFiles(url).ToList().ForEach(q => result.Add(q, new FileInfo(q).CreationTimeUtc));
             foreach (var director in Directory.GetDirectories(url))
             {
-                result.AddRange(GetAllFiles(director));
+                foreach (var item in GetAllFiles(director))
+                {
+                    result.Add(item.Key, item.Value);
+                }
             }
 
             return result;
@@ -41,5 +44,10 @@ namespace Task2.Services
             return ServerType.Local;
         }
 
+        public override Task DownloadAsync(Server server, string path, string toLocalPath)
+        {
+            System.IO.File.Copy(path, toLocalPath);
+            return Task.CompletedTask;
+        }
     }
 }

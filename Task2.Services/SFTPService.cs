@@ -18,11 +18,11 @@ namespace Task2.Services
         {
             foreach (var server in Servers)
             {
-                SftpClient sftp = new SftpClient(server.Url, server.UserName, server.Password);
-                sftp.Connect();
-                var files = GetAllFiles(sftp, "/");
-                sftp.Disconnect();
-                await SavePathAsync(files);
+                SftpClient sFtpClient = new SftpClient(server.Url, server.UserName, server.Password);
+                sFtpClient.Connect();
+                var files = GetAllFiles(sFtpClient, "/");
+                sFtpClient.Disconnect();
+                await SyncPathAsync(files, server);
             }
 
             return;
@@ -32,21 +32,23 @@ namespace Task2.Services
         /// </summary>
         /// <param name="client"></param>
         /// <param name="path"></param>
-        private List<string> GetAllFiles(SftpClient client, string path)
+        private Dictionary<string, DateTime> GetAllFiles(SftpClient client, string path)
         {
-            var result = new List<string>();
-
+            var result = new Dictionary<string, DateTime>();
             var files = client.ListDirectory(path);
 
             foreach (var file in files.Where(q => !q.IsDirectory))
             {
-                result.Add(file.FullName);
+                result.Add(file.FullName, file.LastWriteTimeUtc);
             }
 
 
             foreach (var file in files.Where(q => q.IsDirectory && !q.FullName.Contains("/.") && !q.FullName.Contains("/..")))
             {
-                result.AddRange(GetAllFiles(client, file.FullName));
+                foreach (var item in GetAllFiles(client, file.FullName))
+                {
+                    result.Add(item.Key, item.Value);
+                }
             }
 
             return result;
@@ -58,5 +60,17 @@ namespace Task2.Services
             return ServerType.SFTP;
         }
 
+        public override Task DownloadAsync(Server server, string path, string toLocalPath)
+        {
+            using (SftpClient sFtpClient = new SftpClient(server.Url, server.UserName, server.Password))
+            {
+                sFtpClient.Connect();
+                using (Stream fileStream = System.IO.File.Create(toLocalPath))
+                {
+                    sFtpClient.DownloadFile(path, fileStream);
+                }
+            }
+            return Task.CompletedTask;
+        }
     }
 }

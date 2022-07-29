@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -19,6 +20,7 @@ namespace Task2.Infrastructure.Migrations
                     Id = table.Column<string>(type: "text", nullable: false),
                     Path = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
+                    CreationDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ServerType = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -53,7 +55,7 @@ namespace Task2.Infrastructure.Migrations
                     { "62CD1744-DD07-4BB4-8EE0-FC1359E2C278", "LocalFile1Server", "", 0, 0, "D:\\testFTP", "" },
                     { "62CD1744-DD07-4BB4-8EE0-FC1359E2C279", "LocalFile2Server", "", 0, 0, "D:\\output", "" },
                     { "62CD1744-DD07-4BB4-8EE0-FC1359E2C280", "FTPFileServer", "Test123", 21, 1, "192.168.50.11", "TestFtp" },
-                    { "62CD1744-DD07-4BB4-8EE0-FC1359E2C281", "SFTPFileServer", "Test123", 22, 2, "192.168.50.11", "TestFtp" }
+                    { "62CD1744-DD07-4BB4-8EE0-FC1359E2C281", "SFTPFileServer", "password", 22, 2, "test.rebex.net", "demo" }
                 });
         }
 
