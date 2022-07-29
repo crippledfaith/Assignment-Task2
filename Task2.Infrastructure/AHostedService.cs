@@ -28,53 +28,17 @@ namespace Task2.Infrastructure
 
         public abstract Task ExcuteAsync();
         public abstract ServerType GetServerType();
-
         public AHostedService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext, IOptions<ServiceSetting> settings)
         {
             _logger = logger;
             ServerContextFactory = serverContext;
             Interval = settings.Value.ServiceInterval;
-            _logger.LogInformation("Service Initialized");
-
+            _logger.LogInformation("{Type} Service Initialized", this.ToString());
         }
 
-        public async Task<List<Server>> GetServerInfomationAsync()
-        {
-            List<Server> server = new List<Server>();
-            try
-            {
-                _logger.LogInformation("Getting Server Information From Database.");
-                var context = ServerContextFactory.CreateDbContext();
-                if (context != null && context.Servers != null)
-                {
-                    server = await context.Servers.Where(q => q.ServerType == GetServerType()).ToListAsync();
-                    if (server == null)
-                    {
-                        server = new List<Server>();
-                        _logger.LogWarning($"No Serve of type{GetServerType()} found");
-                    }
-                }
-                else
-                {
-                    server = new List<Server>();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while read data.");
-            }
-            return server;
-        }
-
-        public Task StartAsync(CancellationToken stoppingToken)
-        {
-            _logger.LogInformation("Timed Hosted Service running.");
-            if (IsEnable)
-                _timer = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromSeconds(Interval));
-
-            return Task.CompletedTask;
-        }
-
+        /// <summary>
+        /// Saves file Path to Database
+        /// </summary>
         public async Task SavePathAsync(List<string> paths)
         {
             try
@@ -109,6 +73,21 @@ namespace Task2.Infrastructure
 
         }
 
+        /// <summary>
+        /// Start Service
+        /// </summary>
+        public Task StartAsync(CancellationToken stoppingToken)
+        {
+            _logger.LogInformation("Timed Hosted Service running.");
+            if (IsEnable)
+                _timer = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromSeconds(Interval));
+
+            return Task.CompletedTask;
+        }
+        /// <summary>
+        /// Stop Service
+        /// </summary>
+        /// <param name="stoppingToken"></param>
         public Task StopAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Timed Hosted Service is stopping.");
@@ -122,7 +101,37 @@ namespace Task2.Infrastructure
         {
             _timer?.Dispose();
         }
-
+        /// <summary>
+        /// Get Service Setting from Database
+        /// </summary>
+        /// <returns>List Of Server</returns>
+        private async Task<List<Server>> GetServerInfomationAsync()
+        {
+            List<Server> server = new List<Server>();
+            try
+            {
+                _logger.LogInformation("Getting Server Information From Database.");
+                var context = ServerContextFactory.CreateDbContext();
+                if (context != null && context.Servers != null)
+                {
+                    server = await context.Servers.Where(q => q.ServerType == GetServerType()).ToListAsync();
+                    if (server == null)
+                    {
+                        server = new List<Server>();
+                        _logger.LogWarning($"No Serve of type{GetServerType()} found");
+                    }
+                }
+                else
+                {
+                    server = new List<Server>();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while read data.");
+            }
+            return server;
+        }
         private async void DoWork(object? state)
         {
             var count = Interlocked.Increment(ref _executionCount);

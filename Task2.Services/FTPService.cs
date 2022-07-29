@@ -52,9 +52,7 @@ namespace Task2.Services
         }
         private void ClientValidateCertificate(FtpClient control, FtpSslValidationEventArgs e)
         {
-
             e.Accept = true;
-
         }
 
         public override ServerType GetServerType()

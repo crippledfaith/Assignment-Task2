@@ -27,11 +27,16 @@ namespace Task2.Services
 
             return;
         }
-        private List<string> GetAllFiles(SftpClient sftp, string url)
+        /// <summary>
+        /// Recursivelty get all files from SFTP server
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="path"></param>
+        private List<string> GetAllFiles(SftpClient client, string path)
         {
             var result = new List<string>();
 
-            var files = sftp.ListDirectory(url);
+            var files = client.ListDirectory(path);
 
             foreach (var file in files.Where(q => !q.IsDirectory))
             {
@@ -41,7 +46,7 @@ namespace Task2.Services
 
             foreach (var file in files.Where(q => q.IsDirectory && !q.FullName.Contains("/.") && !q.FullName.Contains("/..")))
             {
-                result.AddRange(GetAllFiles(sftp, file.FullName));
+                result.AddRange(GetAllFiles(client, file.FullName));
             }
 
             return result;
