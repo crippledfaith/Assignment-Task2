@@ -33,7 +33,6 @@ namespace Task2.Infrastructure
             _logger = logger;
             ServerContextFactory = serverContext;
 
-            _servers = new List<Server>();
             _logger.LogInformation("Service Initialized");
 
         }
@@ -127,7 +126,7 @@ namespace Task2.Infrastructure
         {
             var count = Interlocked.Increment(ref _executionCount);
             _timer?.Change(Timeout.Infinite, Timeout.Infinite);
-            _logger.LogInformation("Excuting File Check", ToString());
+            _logger.LogInformation("Excuting File Check {Type}", ToString());
             try
             {
                 await ExcuteAsync();

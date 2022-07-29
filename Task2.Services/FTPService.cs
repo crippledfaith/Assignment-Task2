@@ -10,12 +10,9 @@ namespace Task2.Services
     {
         public FTPService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext) : base(logger, serverContext)
         {
-            IsEnable = false;
+            IsEnable = true;
             Interval = 60;
         }
-
-
-
 
         public override async Task ExcuteAsync()
         {

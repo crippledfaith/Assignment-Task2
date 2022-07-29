@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Task2.Infrastructure;
 using Task2.Infrastructure.Context;
+using Task2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,7 @@ List<Type> services = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.
             .Where(x => typeof(IService).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
             .Select(x => x).ToList();
 //Run them as a Hosted Service.
+builder.Services.AddSingleton<LocalService>();
 foreach (var type in services)
     builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), type));
 var app = builder.Build();
