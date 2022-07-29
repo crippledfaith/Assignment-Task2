@@ -12,12 +12,17 @@ builder.Services.AddSwaggerGen();
 //Please Update Seed Data and Run Migration Before Running.
 builder.Services.AddDbContextFactory<ServerContext>(options =>
         options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+builder.Services.Configure<ServiceSetting>(builder.Configuration.GetSection("ServiceSetting"));
 //Load all IService type of Class.
 List<Type> services = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
             .Where(x => typeof(IService).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
             .Select(x => x).ToList();
-//Run them as a Hosted Service.
+
+//To keep reference of Task2.Services
 builder.Services.AddSingleton<LocalService>();
+
+//Run them as a Hosted Service.
+
 foreach (var type in services)
     builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), type));
 var app = builder.Build();

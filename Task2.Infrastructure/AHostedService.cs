@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Task2.Infrastructure.Context;
 using File = Task2.Infrastructure.Context.File;
 
@@ -28,11 +29,11 @@ namespace Task2.Infrastructure
         public abstract Task ExcuteAsync();
         public abstract ServerType GetServerType();
 
-        public AHostedService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext)
+        public AHostedService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext, IOptions<ServiceSetting> settings)
         {
             _logger = logger;
             ServerContextFactory = serverContext;
-
+            Interval = settings.Value.ServiceInterval;
             _logger.LogInformation("Service Initialized");
 
         }

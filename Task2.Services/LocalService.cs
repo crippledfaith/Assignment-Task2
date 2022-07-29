@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Task2.Infrastructure;
 using Task2.Infrastructure.Context;
 
@@ -7,10 +8,9 @@ namespace Task2.Services
 {
     public class LocalService : AHostedService, IService
     {
-        public LocalService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext) : base(logger, serverContext)
+        public LocalService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext, IOptions<ServiceSetting> settings) : base(logger, serverContext, settings)
         {
             IsEnable = true;
-            Interval = 60;
         }
 
 
