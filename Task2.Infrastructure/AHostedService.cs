@@ -41,7 +41,7 @@ namespace Task2.Infrastructure
         }
 
         /// <summary>
-        /// Saves file Path to Database
+        /// Saves file Path to Database and download files locally
         /// </summary>
         public async Task SyncPathAsync(Dictionary<string, DateTime> paths, Server server)
         {
