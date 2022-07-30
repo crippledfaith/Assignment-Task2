@@ -11,7 +11,7 @@ namespace Task2.Services
     {
         public SFTPService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext, IOptions<ServiceSetting> settings) : base(logger, serverContext, settings)
         {
-            IsEnable = false;
+            IsEnable = true;
         }
 
         public override async Task ExcuteAsync()
