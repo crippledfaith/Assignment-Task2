@@ -60,15 +60,19 @@ namespace Task2.Services
             return ServerType.SFTP;
         }
 
-        public override Task DownloadAsync(Server server, string path, string toLocalPath)
+        public override Task DownloadAsync(Server server, Dictionary<string, string> paths)
         {
             using (SftpClient sFtpClient = new SftpClient(server.Url, server.UserName, server.Password))
             {
                 sFtpClient.Connect();
-                using (Stream fileStream = System.IO.File.Create(toLocalPath))
+                foreach (var path in paths)
                 {
-                    sFtpClient.DownloadFile(path, fileStream);
+                    using (Stream fileStream = System.IO.File.Create(path.Value))
+                    {
+                        sFtpClient.DownloadFile(path.Key, fileStream);
+                    }
                 }
+
             }
             return Task.CompletedTask;
         }

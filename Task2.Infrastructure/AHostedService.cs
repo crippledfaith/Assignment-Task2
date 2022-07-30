@@ -29,7 +29,7 @@ namespace Task2.Infrastructure
 
         public abstract Task ExcuteAsync();
 
-        public abstract Task DownloadAsync(Server server, string fromPath, string toLocalPath);
+        public abstract Task DownloadAsync(Server server, Dictionary<string, string> paths);
         public abstract ServerType GetServerType();
         public AHostedService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext, IOptions<ServiceSetting> settings)
         {
@@ -49,7 +49,7 @@ namespace Task2.Infrastructure
             {
                 var context = ServerContextFactory.CreateDbContext();
                 var files = context?.Files?.Where(q => q.ServerType == GetServerType()).ToList();
-                List<string> newPaths = new List<string>();
+                Dictionary<string, string> newPaths = new Dictionary<string, string>();
                 if (files != null && context != null)
                 {
                     foreach (var xpath in paths)
@@ -66,11 +66,9 @@ namespace Task2.Infrastructure
                             {
                                 fileDownloaded.CreationDate = loTime;
                                 context.Update(fileDownloaded);
-                                newPaths.Add(path);
+                                newPaths.Add(path, localFilePath);
                                 System.IO.File.Delete(localFilePath);
-                                await DownloadAsync(server, path, localFilePath);
                             }
-
                         }
                         else
                         {
@@ -82,14 +80,14 @@ namespace Task2.Infrastructure
                                 ServerType = server.ServerType,
                                 CreationDate = loTime,
                             });
-                            newPaths.Add(path);
-                            await DownloadAsync(server, path, localFilePath);
+                            newPaths.Add(path, localFilePath);
 
                         }
                     }
 
                     if (newPaths.Count > 0)
                     {
+                        await DownloadAsync(server, newPaths);
                         await context.SaveChangesAsync();
                     }
 

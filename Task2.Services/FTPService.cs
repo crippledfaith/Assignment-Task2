@@ -68,14 +68,17 @@ namespace Task2.Services
             return ServerType.FTP;
         }
 
-        public override async Task DownloadAsync(Server server, string path, string toLocalPath)
+        public override async Task DownloadAsync(Server server, Dictionary<string, string> paths)
         {
             using (FtpClient client = new FtpClient(server.Url, server.Port, server.UserName, server.Password))
             {
                 client.ValidateCertificate += ClientValidateCertificate;
                 client.SslProtocols = System.Security.Authentication.SslProtocols.None;
                 client.AutoConnect();
-                await client.DownloadFileAsync(toLocalPath, path);
+                foreach (var path in paths)
+                {
+                    await client.DownloadFileAsync(path.Value, path.Key);
+                }
                 client.Disconnect();
             }
             return;

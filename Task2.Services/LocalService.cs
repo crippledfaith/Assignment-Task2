@@ -48,9 +48,13 @@ namespace Task2.Services
             return ServerType.Local;
         }
 
-        public override Task DownloadAsync(Server server, string path, string toLocalPath)
+        public override Task DownloadAsync(Server server, Dictionary<string, string> paths)
         {
-            System.IO.File.Copy(path, toLocalPath);
+            foreach (var path in paths)
+            {
+                System.IO.File.Copy(path.Key, path.Value);
+            }
+
             return Task.CompletedTask;
         }
     }
