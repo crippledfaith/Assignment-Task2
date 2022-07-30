@@ -55,16 +55,16 @@ namespace Task2.Infrastructure
                     foreach (var xpath in paths)
                     {
                         var path = xpath.Key;
-                        string localPath = GetLocalPath(paths.Keys.ToList(), path, server.Name);
-                        var localFilePath = Path.Combine(localPath, Path.GetFileName(path));
+                        string localFilePath = GetFileLocalPath(paths.Keys.ToList(), path, server.Name, Settings.UseFlatDirectory);
+
                         var localFileCreationDate = xpath.Value;
-                        var loTime = localFileCreationDate.ToLocalTime();
+                        var localTime = localFileCreationDate.ToLocalTime();
                         if (System.IO.File.Exists(localFilePath))
                         {
-                            var fileDownloaded = files.FirstOrDefault(q => q.Path == path && (loTime - q.CreationDate).TotalSeconds > .1);
+                            var fileDownloaded = files.FirstOrDefault(q => q.Path == path && (localTime - q.CreationDate).TotalSeconds > .1);
                             if (fileDownloaded != null)
                             {
-                                fileDownloaded.CreationDate = loTime;
+                                fileDownloaded.CreationDate = localTime;
                                 context.Update(fileDownloaded);
                                 newPaths.Add(path, localFilePath);
                                 System.IO.File.Delete(localFilePath);
@@ -78,10 +78,9 @@ namespace Task2.Infrastructure
                                 Name = Path.GetFileName(path),
                                 Path = path,
                                 ServerType = server.ServerType,
-                                CreationDate = loTime,
+                                CreationDate = localTime,
                             });
                             newPaths.Add(path, localFilePath);
-
                         }
                     }
 
@@ -185,38 +184,52 @@ namespace Task2.Infrastructure
         /// <param name="curentFilePath"></param>
         /// <param name="serverName"></param>
         /// <returns></returns>
-        private string GetLocalPath(List<string> paths, string curentFilePath, string serverName)
+        private string GetFileLocalPath(List<string> paths, string curentFilePath, string serverName, bool useFlatDirectory)
         {
-            var commonPath = GetCommonPath(paths);
-            string directoryPath = curentFilePath.Replace(Path.GetFileName(curentFilePath), "");
-
-            var serverPath = commonPath.Length > 1 ? directoryPath.Replace(commonPath, "") : directoryPath;
             var localPath = Path.Combine(Settings.ServiceLocalPath, serverName);
-            if (!System.IO.Directory.Exists(localPath))
+            if (!Directory.Exists(localPath))
             {
                 Directory.CreateDirectory(localPath);
             }
-            List<string> pathSplit = serverPath.Split('/').ToList();
-            var pathSplit2 = serverPath.Split('\\').ToList();
-            if (pathSplit.Count > 1 && pathSplit2.Count > 1)
+            if (!useFlatDirectory)
             {
-                pathSplit.AddRange(pathSplit2);
-            }
-            else if (pathSplit2.Count > 1)
-            {
-                pathSplit = pathSplit2;
-            }
-            else if (pathSplit.Count == 1)
-            {
-                pathSplit = new List<string>();
-            }
-            foreach (var path in pathSplit)
-            {
-                localPath = Path.Combine(localPath, path);
-                if (!System.IO.Directory.Exists(localPath))
+                var commonPath = GetCommonPath(paths);
+                string directoryPath = curentFilePath.Replace(Path.GetFileName(curentFilePath), "");
+                var serverPath = commonPath.Length > 1 ? directoryPath.Replace(commonPath, "") : directoryPath;
+
+                List<string> pathSplit = serverPath.Split('/').ToList();
+                var pathSplit2 = serverPath.Split('\\').ToList();
+                if (pathSplit.Count > 1 && pathSplit2.Count > 1)
                 {
-                    Directory.CreateDirectory(localPath);
+                    pathSplit.AddRange(pathSplit2);
                 }
+                else if (pathSplit2.Count > 1)
+                {
+                    pathSplit = pathSplit2;
+                }
+                else if (pathSplit.Count == 1)
+                {
+                    pathSplit = new List<string>();
+                }
+                foreach (var path in pathSplit)
+                {
+                    localPath = Path.Combine(localPath, path);
+                    if (!Directory.Exists(localPath))
+                    {
+                        Directory.CreateDirectory(localPath);
+                    }
+                }
+                localPath = Path.Combine(localPath, Path.GetFileName(curentFilePath));
+            }
+            else
+            {
+                var sha1 = System.Security.Cryptography.SHA1.Create();
+                byte[] buf = System.Text.Encoding.UTF8.GetBytes(curentFilePath);
+                byte[] hash = sha1.ComputeHash(buf, 0, buf.Length);
+                //var hashstr  = Convert.ToBase64String(hash);
+                var hashstr = BitConverter.ToString(hash).Replace("-", "");
+                var extension = Path.GetExtension(curentFilePath);
+                localPath = Path.Combine(localPath, $"{hashstr}{extension}");
             }
             return localPath;
         }

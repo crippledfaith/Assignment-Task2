@@ -4,6 +4,6 @@
     {
         public int ServiceInterval { get; set; } = 60;
         public string ServiceLocalPath { get; set; }
-
+        public bool UseFlatDirectory { get; set; }
     }
 }
