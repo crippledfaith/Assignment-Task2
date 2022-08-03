@@ -60,7 +60,7 @@ namespace Task2.Services
             return ServerType.SFTP;
         }
 
-        public override Task DownloadAsync(Server server, Dictionary<string, string> paths)
+        public override Task DownloadAsync(ServeModel server, Dictionary<string, string> paths)
         {
             using (SftpClient sFtpClient = new SftpClient(server.Url, server.UserName, server.Password))
             {

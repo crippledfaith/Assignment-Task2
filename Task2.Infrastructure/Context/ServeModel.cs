@@ -2,7 +2,7 @@
 
 namespace Task2.Infrastructure.Context
 {
-    public class Server : IEntity
+    public class ServeModel : IEntity
     {
         [Key]
         public string Id { get; set; }

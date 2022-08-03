@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Task2.Infrastructure.Context;
-using File = Task2.Infrastructure.Context.File;
+using FileModel = Task2.Infrastructure.Context.FileModel;
 
 namespace Task2.Infrastructure
 {
@@ -12,14 +12,14 @@ namespace Task2.Infrastructure
         private int _executionCount = 0;
         private Timer? _timer = null;
         private readonly ILogger<AHostedService> _logger;
-        private List<Server> _servers;
+        private List<ServeModel> _servers;
 
-        public IDbContextFactory<ServerContext> ServerContextFactory { get; private set; }
+        private IDbContextFactory<ServerContext> ServerContextFactory { get; set; }
         public ServiceSetting Settings { get; }
         public bool IsEnable { get; set; }
-        public int Interval { get; set; } = 10;
+        private int Interval { get; set; } = 10;
 
-        public List<Server> Servers
+        public List<ServeModel> Servers
         {
             get
             {
@@ -29,26 +29,26 @@ namespace Task2.Infrastructure
 
         public abstract Task ExcuteAsync();
 
-        public abstract Task DownloadAsync(Server server, Dictionary<string, string> paths);
+        public abstract Task DownloadAsync(ServeModel server, Dictionary<string, string> paths);
         public abstract ServerType GetServerType();
         public AHostedService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext, IOptions<ServiceSetting> settings)
         {
             _logger = logger;
             ServerContextFactory = serverContext;
             Settings = settings.Value;
-            Interval = settings.Value.ServiceInterval;
+            Interval = Settings.ServiceInterval;
             _logger.LogInformation("{Type} Service Initialized", this.ToString());
         }
 
         /// <summary>
         /// Saves file Path to Database and download files locally
         /// </summary>
-        public async Task SyncPathAsync(Dictionary<string, DateTime> paths, Server server)
+        public async Task SyncPathAsync(Dictionary<string, DateTime> paths, ServeModel server)
         {
             try
             {
                 var context = ServerContextFactory.CreateDbContext();
-                var files = context?.Files?.Where(q => q.ServerType == GetServerType()).ToList();
+                var files = context?.Files?.Where(q => q.Server.ServerType == GetServerType()).ToList();
                 Dictionary<string, string> newPaths = new Dictionary<string, string>();
                 if (files != null && context != null)
                 {
@@ -59,7 +59,7 @@ namespace Task2.Infrastructure
 
                         var localFileCreationDate = xpath.Value;
                         var localTime = localFileCreationDate.ToLocalTime();
-                        if (System.IO.File.Exists(localFilePath))
+                        if (File.Exists(localFilePath))
                         {
                             var fileDownloaded = files.FirstOrDefault(q => q.Path == path && (localTime - q.CreationDate).TotalSeconds > .1);
                             if (fileDownloaded != null)
@@ -67,17 +67,18 @@ namespace Task2.Infrastructure
                                 fileDownloaded.CreationDate = localTime;
                                 context.Update(fileDownloaded);
                                 newPaths.Add(path, localFilePath);
-                                System.IO.File.Delete(localFilePath);
+                                File.Delete(localFilePath);
                             }
                         }
                         else
                         {
-                            context.Add(new File()
+                            var cServer = context.Servers.FirstOrDefault(q => q.Id == server.Id);
+                            context.Add(new FileModel()
                             {
                                 Id = Guid.NewGuid().ToString(),
                                 Name = Path.GetFileName(path),
                                 Path = path,
-                                ServerType = server.ServerType,
+                                Server = cServer,
                                 CreationDate = localTime,
                             });
                             newPaths.Add(path, localFilePath);
@@ -134,9 +135,9 @@ namespace Task2.Infrastructure
         /// Get Service Setting from Database
         /// </summary>
         /// <returns>List Of Server</returns>
-        private async Task<List<Server>> GetServerInfomationAsync()
+        private async Task<List<ServeModel>> GetServerInfomationAsync()
         {
-            List<Server> server = new List<Server>();
+            List<ServeModel> server = new List<ServeModel>();
             try
             {
                 _logger.LogInformation("Getting Server Information From Database.");
@@ -146,13 +147,13 @@ namespace Task2.Infrastructure
                     server = await context.Servers.Where(q => q.ServerType == GetServerType()).ToListAsync();
                     if (server == null)
                     {
-                        server = new List<Server>();
+                        server = new List<ServeModel>();
                         _logger.LogWarning($"No Serve of type{GetServerType()} found");
                     }
                 }
                 else
                 {
-                    server = new List<Server>();
+                    server = new List<ServeModel>();
                 }
             }
             catch (Exception ex)

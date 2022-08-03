@@ -23,7 +23,7 @@ namespace Task2.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Task2.Infrastructure.Context.File", b =>
+            modelBuilder.Entity("Task2.Infrastructure.Context.FileModel", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
@@ -39,15 +39,18 @@ namespace Task2.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("ServerType")
-                        .HasColumnType("integer");
+                    b.Property<string>("ServerId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ServerId");
 
                     b.ToTable("Files", "public");
                 });
 
-            modelBuilder.Entity("Task2.Infrastructure.Context.Server", b =>
+            modelBuilder.Entity("Task2.Infrastructure.Context.ServeModel", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
@@ -119,6 +122,17 @@ namespace Task2.Infrastructure.Migrations
                             Url = "test.rebex.net",
                             UserName = "demo"
                         });
+                });
+
+            modelBuilder.Entity("Task2.Infrastructure.Context.FileModel", b =>
+                {
+                    b.HasOne("Task2.Infrastructure.Context.ServeModel", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Server");
                 });
 #pragma warning restore 612, 618
         }

@@ -5,28 +5,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Task2.Infrastructure.Migrations
 {
-    public partial class Intial : Migration
+    public partial class Initial : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
                 name: "public");
-
-            migrationBuilder.CreateTable(
-                name: "Files",
-                schema: "public",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    Path = table.Column<string>(type: "text", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    CreationDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ServerType = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Files", x => x.Id);
-                });
 
             migrationBuilder.CreateTable(
                 name: "Servers",
@@ -46,6 +30,29 @@ namespace Task2.Infrastructure.Migrations
                     table.PrimaryKey("PK_Servers", x => x.Id);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Files",
+                schema: "public",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    Path = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    CreationDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ServerId = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Files", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Files_Servers_ServerId",
+                        column: x => x.ServerId,
+                        principalSchema: "public",
+                        principalTable: "Servers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 schema: "public",
                 table: "Servers",
@@ -57,6 +64,12 @@ namespace Task2.Infrastructure.Migrations
                     { "62CD1744-DD07-4BB4-8EE0-FC1359E2C280", "FTPFileServer", "Test123", 21, 1, "192.168.50.11", "TestFtp" },
                     { "62CD1744-DD07-4BB4-8EE0-FC1359E2C281", "SFTPFileServer", "password", 22, 2, "test.rebex.net", "demo" }
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Files_ServerId",
+                schema: "public",
+                table: "Files",
+                column: "ServerId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

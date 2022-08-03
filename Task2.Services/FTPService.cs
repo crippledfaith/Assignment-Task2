@@ -11,7 +11,7 @@ namespace Task2.Services
     {
         public FTPService(ILogger<AHostedService> logger, IDbContextFactory<ServerContext> serverContext, IOptions<ServiceSetting> settings) : base(logger, serverContext, settings)
         {
-            IsEnable = false;
+            IsEnable = true;
         }
 
         public override async Task ExcuteAsync()
@@ -68,7 +68,7 @@ namespace Task2.Services
             return ServerType.FTP;
         }
 
-        public override async Task DownloadAsync(Server server, Dictionary<string, string> paths)
+        public override async Task DownloadAsync(ServeModel server, Dictionary<string, string> paths)
         {
             using (FtpClient client = new FtpClient(server.Url, server.Port, server.UserName, server.Password))
             {
